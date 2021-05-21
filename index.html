@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo WebSockets</title>
+</head>
+<body>
+    <div>
+        <label for="name">Write your name</label>
+        <input id="name" type="text">
+    </div>
+    <div>
+        <label for="message">Write your message</label>
+        <input id="message" type="text">
+    </div>
+
+    <button onclick="connect()" >Connect</button> <br>
+    <button onclick="sendMessage()">Send</button>
+
+
+    <h1>Messages:</h1>
+    <div id="message-log">
+        <p>message logger</p>
+    </div>
+
+
+    <script>
+        let id = Math.random()
+
+        let user = {
+            name: 'user1',
+            type: 'SET_USER',
+            // type: 'SEND_MESSAGE'
+        }
+
+        // let messages = []
+        let websocket = null;
+
+
+        function renderMessages(payload) {
+            // console.log(payload);
+            const display = document.getElementById('message-log')
+            display.innerText = ''
+            payload.forEach(element => {
+                const userName = document.createElement('p')
+                userName.innerText = element.user.name
+                display.appendChild(userName)
+
+                const content = document.createElement('p')
+                content.innerText = element.message
+                display.appendChild(content)
+            });
+        }
+        
+        
+        function connect() {
+            websocket = new WebSocket('ws://localhost:9000');
+            
+            
+            websocket.addEventListener('open', function () {
+                const name = document.getElementById('name').value
+                user.name = name
+                const payload = {user}
+                // console.log(payload);
+                console.log('On client: connected');
+                websocket.send(JSON.stringify(payload))
+                
+            })
+            
+            websocket.addEventListener('message', function(event){ // Tar emot data från server
+                const response = JSON.parse(event.data)
+                console.log('response');
+                console.log(response);
+                if (response) {
+                    renderMessages(response.messages)
+                }
+                    
+                if (response.message) {
+                    console.log('inside event.data.msg');
+                }
+
+            })
+            
+            websocket.addEventListener("close", function(){
+                console.log("Disconnected")
+                websocket = null
+            })
+        }
+        
+        function sendMessage() {
+            const message = document.getElementById('message').value
+            user.type = 'SEND_MESSAGE';
+            payload = {user, message}
+            if (websocket) {
+                websocket.send(JSON.stringify(payload))
+            }
+        }
+
+        
+
+    </script>
+</body>
+</html>
